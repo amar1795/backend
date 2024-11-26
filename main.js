@@ -38,7 +38,7 @@ client.connect()
     });
 
 // POST request to add user data
-app.post('https://haqdarshaqbackend.vercel.app/users', async (req, res) => {
+app.post('/users', async (req, res) => {
     const { name, gender, dob, age, mobile_number, address_state, address_district, address_pin_code } = req.body;
 
     console.log('Request body:', req.body);
@@ -64,7 +64,7 @@ app.post('https://haqdarshaqbackend.vercel.app/users', async (req, res) => {
 });
 
 // GET request to fetch all user data
-app.get('https://haqdarshaqbackend.vercel.app/users', async (req, res) => {
+app.get('/users', async (req, res) => {
     try {
         const result = await client.query('SELECT * FROM users');
         res.status(200).json(result.rows);
