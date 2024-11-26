@@ -32,10 +32,6 @@ client.connect()
 
 
 
-    app.use("/",(req, res, next) => {
-     res.json({ message: 'Hello from the server!' });
-      
-    });
 
 // POST request to add user data
 app.post('/users', async (req, res) => {
