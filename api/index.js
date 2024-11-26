@@ -1,4 +1,4 @@
-require('dotenv').config(); // Load .env variables into process.env
+require('dotenv').config();
 const express = require('express');
 const { Client } = require('pg');
 const cors = require('cors');
@@ -9,27 +9,37 @@ const PORT = process.env.DB_PORT || 5000;
 // Middleware to parse JSON requests
 app.use(express.json());
 
- // Enable CORS for all routes
- app.use(cors({
-    origin: 'https://haqdarshaqbackend.vercel.app',  // or '*' for all origins
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  }));
+// CORS configuration
+const allowedOrigins = [
+  'https://haqdarshak-assignment.vercel.app',    // Your frontend URL
+  'https://haqdarshaqbackend.vercel.app',        // Your backend URL
+  'http://localhost:3000'                        // Local development
+];
 
-//   // Default Next.js route handler
-//   app.all('*', (req, res) => {
-//     return handle(req, res);
-//   });
-
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,
+  optionsSuccessStatus: 200
+}));
 
 // PostgreSQL client setup
 const client = new Client({
-    connectionString: process.env.DB_URI, // Replace with your Supabase connection string
+    connectionString: process.env.DB_URI,
 });
 
 client.connect()
     .then(() => console.log('Connected to Supabase PostgreSQL database'))
     .catch(err => console.error('Connection error', err.stack));
-
 
 // POST request to add user data
 app.post('/users', async (req, res) => {
@@ -37,7 +47,6 @@ app.post('/users', async (req, res) => {
 
     console.log('Request body:', req.body);
 
-    // Ensure either dob or age is provided but not both
     if ((dob && age) || (!dob && !age)) {
         return res.status(400).json({ error: 'Provide either DOB or Age, but not both.' });
     }
@@ -61,18 +70,29 @@ app.post('/users', async (req, res) => {
 app.get('/users', async (req, res) => {
     try {
         const result = await client.query('SELECT * FROM users');
-        res.status(200).json(result.rows);
+        res.json(result.rows);
     } catch (error) {
         console.error('Error fetching data:', error);
         res.status(500).json({ error: 'Failed to fetch users' });
     }
 });
 
-// Start the server
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+// Add a health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'OK' });
 });
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ error: 'Something broke!' });
+});
 
+// Start the server
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`Server is running on http://localhost:${PORT}`);
+    });
+}
 
-module.exports = app; // Export the Express app to use in serverless function
+module.exports = app;
