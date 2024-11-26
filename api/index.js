@@ -11,7 +11,7 @@ app.use(express.json());
 
  // Enable CORS for all routes
  app.use(cors({
-    origin: 'http://localhost:3000',  // or '*' for all origins
+    origin: 'https://haqdarshaqbackend.vercel.app',  // or '*' for all origins
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
   }));
 
