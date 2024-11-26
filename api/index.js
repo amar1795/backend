@@ -1,74 +1,74 @@
-// api/users.js
-import { Client } from 'pg';
+// api/index.js
+require('dotenv').config();
+const express = require('express');
+const { Client } = require('pg');
+const cors = require('cors');
 
-// Initialize PostgreSQL client
+// Create Express app
+const app = express();
+
+// Middleware
+app.use(express.json());
+app.use(cors({
+  origin: 'https://haqdarshak-assignment.vercel.app',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+}));
+
+// PostgreSQL client setup
 const client = new Client({
   connectionString: process.env.DB_URI,
 });
 
-// Track connection state
+// Connect to database
 let isConnected = false;
-
 async function connectToDatabase() {
   if (!isConnected) {
     try {
       await client.connect();
       isConnected = true;
-      console.log('Connected to database');
+      console.log('Connected to Supabase PostgreSQL database');
     } catch (err) {
-      console.error('Connection error', err);
-      throw err;
+      console.error('Connection error', err.stack);
     }
   }
 }
 
-export default async function handler(req, res) {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', 'https://haqdarshak-assignment.vercel.app');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
+// API Routes
+app.post('/api/users', async (req, res) => {
+  await connectToDatabase();
+  
+  const { name, gender, dob, age, mobile_number, address_state, address_district, address_pin_code } = req.body;
 
-  // Handle preflight request
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+  if ((dob && age) || (!dob && !age)) {
+    return res.status(400).json({ error: 'Provide either DOB or Age, but not both.' });
   }
 
   try {
-    // Connect to database
-    await connectToDatabase();
-
-    switch (req.method) {
-      case 'GET':
-        const result = await client.query('SELECT * FROM users');
-        res.status(200).json(result.rows);
-        break;
-
-      case 'POST':
-        const { name, gender, dob, age, mobile_number, address_state, address_district, address_pin_code } = req.body;
-        
-        const insertResult = await client.query(
-          `INSERT INTO users 
-          (name, gender, dob, age, mobile_number, address_state, address_district, address_pin_code)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-          RETURNING *`,
-          [name, gender, dob || null, age || null, mobile_number, address_state, address_district, address_pin_code]
-        );
-        
-        res.status(201).json({ message: 'User added successfully', user: insertResult.rows[0] });
-        break;
-
-      default:
-        res.status(405).json({ error: 'Method not allowed' });
-    }
+    const result = await client.query(
+      `INSERT INTO users 
+      (name, gender, dob, age, mobile_number, address_state, address_district, address_pin_code)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *`,
+      [name, gender, dob || null, age || null, mobile_number, address_state, address_district, address_pin_code]
+    );
+    res.status(201).json({ message: 'User added successfully', user: result.rows[0] });
   } catch (error) {
-    console.error('API Error:', error);
-    res.status(500).json({ error: 'Internal server error', message: error.message });
+    console.error('Error inserting data:', error);
+    res.status(500).json({ error: 'Failed to add user' });
   }
-}
+});
 
-// 
+app.get('/api/users', async (req, res) => {
+  await connectToDatabase();
+  
+  try {
+    const result = await client.query('SELECT * FROM users');
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+// Export the Express API
+module.exports = app;
