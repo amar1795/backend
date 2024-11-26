@@ -31,6 +31,12 @@ client.connect()
     .catch(err => console.error('Connection error', err.stack));
 
 
+
+    app.use((req, res, next) => {
+     res.json({ message: 'Hello from the server!' });
+      
+    });
+    
 // POST request to add user data
 app.post('https://haqdarshaqbackend.vercel.app/users', async (req, res) => {
     const { name, gender, dob, age, mobile_number, address_state, address_district, address_pin_code } = req.body;
