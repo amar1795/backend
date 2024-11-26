@@ -11,7 +11,7 @@ app.use(express.json());
 
  // Enable CORS for all routes
  app.use(cors({
-    origin: 'http://localhost:3000',  // or '*' for all origins
+    origin: 'https://haqdarshak-assignment.vercel.app',  // or '*' for all origins
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
   }));
 
@@ -32,7 +32,7 @@ client.connect()
 
 
 // POST request to add user data
-app.post('/users', async (req, res) => {
+app.post('https://haqdarshaqbackend.vercel.app/users', async (req, res) => {
     const { name, gender, dob, age, mobile_number, address_state, address_district, address_pin_code } = req.body;
 
     console.log('Request body:', req.body);
@@ -58,7 +58,7 @@ app.post('/users', async (req, res) => {
 });
 
 // GET request to fetch all user data
-app.get('/users', async (req, res) => {
+app.get('https://haqdarshaqbackend.vercel.app/users', async (req, res) => {
     try {
         const result = await client.query('SELECT * FROM users');
         res.status(200).json(result.rows);
